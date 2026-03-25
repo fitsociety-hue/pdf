@@ -20,6 +20,8 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <!-- docx.js for Word generation -->
   <script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.min.js"></script>
+  <!-- OpenCV.js for Real-time Edge Detection -->
+  <script src="https://docs.opencv.org/4.7.0/opencv.js" async onload="onOpenCvReady()"></script>
 
   <link rel="stylesheet" href="css/style.css">
 </head>
@@ -105,7 +107,7 @@
   </div>
 
   <!-- ── BOTTOM BAR ─────────────────────────────────────── -->
-  <div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:16px 20px calc(16px + env(safe-area-inset-bottom));background:rgba(0,0,0,0.8);backdrop-filter:blur(12px);z-index:10;gap:10px">
+  <div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:20px 24px calc(24px + env(safe-area-inset-bottom));background:rgba(0,0,0,0.9);backdrop-filter:blur(15px);z-index:10;gap:12px">
     <!-- Last captured thumbnail -->
     <div style="display:flex;justify-content:flex-start">
       <div id="cam-thumbnail" onclick="closeCamera();showPage('editor')"

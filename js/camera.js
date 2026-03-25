@@ -13,6 +13,15 @@ let autoCountdownSec  = 0;
 let detectionCanvas   = null;   // offscreen canvas for frame analysis
 let isDocDetected     = false;
 let capturedCount     = 0;
+let cvReady           = false;
+let detectedQuad      = null; // { tl, tr, br, bl }
+
+// ─── OpenCV Init ─────────────────────────────────────────────
+function onOpenCvReady() {
+  cvReady = true;
+  console.log('OpenCV.js is ready');
+  toast('실시간 문서 감지 준비 완료', 'info');
+}
 
 // ─── Init Camera ─────────────────────────────────────────────
 function initCamera() {
@@ -67,21 +76,88 @@ function stopDocDetection() {
   if (docDetectInterval) { clearInterval(docDetectInterval); docDetectInterval = null; }
 }
 
-// Simple doc detection: analyze brightness distribution to guess if paper present
+// Simple doc detection: analyze contours via OpenCV if available
 function detectDocument(video) {
   if (!detectionCanvas || !video.videoWidth) return;
   const ctx = detectionCanvas.getContext('2d');
   const W = detectionCanvas.width, H = detectionCanvas.height;
   ctx.drawImage(video, 0, 0, W, H);
 
-  // Sample border vs center brightness
-  const centerData = ctx.getImageData(W*0.2, H*0.15, W*0.6, H*0.7);
-  let bright = 0, total = centerData.data.length / 4;
-  for (let i = 0; i < centerData.data.length; i += 4) {
-    bright += (centerData.data[i] + centerData.data[i+1] + centerData.data[i+2]) / 3;
+  let nowDetected = false;
+
+  if (cvReady && typeof cv !== 'undefined') {
+    try {
+      let src = cv.imread(detectionCanvas);
+      let gray = new cv.Mat();
+      cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
+      let blurred = new cv.Mat();
+      cv.GaussianBlur(gray, blurred, new cv.Size(5, 5), 0);
+      let edges = new cv.Mat();
+      cv.Canny(blurred, edges, 75, 200);
+
+      let contours = new cv.MatVector();
+      let hierarchy = new cv.Mat();
+      cv.findContours(edges, contours, hierarchy, cv.RETR_LIST, cv.CHAIN_APPROX_SIMPLE);
+
+      let maxArea = 0;
+      let maxContourIdx = -1;
+      for (let i = 0; i < contours.size(); ++i) {
+        let contour = contours.get(i);
+        let area = cv.contourArea(contour);
+        if (area > 5000) {
+          let peri = cv.arcLength(contour, true);
+          let approx = new cv.Mat();
+          cv.approxPolyDP(contour, approx, 0.02 * peri, true);
+          if (approx.rows === 4 && area > maxArea) {
+            maxArea = area;
+            maxContourIdx = i;
+            // Extract corners
+            let pts = [];
+            for (let j = 0; j < 4; j++) {
+              pts.push({ x: approx.data32S[j * 2], y: approx.data32S[j * 2 + 1] });
+            }
+            // Sort corners: top-left, top-right, bottom-right, bottom-left
+            pts.sort((a, b) => a.y - b.y);
+            let top = pts.slice(0, 2).sort((a, b) => a.x - b.x);
+            let bottom = pts.slice(2, 4).sort((a, b) => b.x - a.x);
+            detectedQuad = {
+              tl: { x: top[0].x / W, y: top[0].y / H },
+              tr: { x: top[1].x / W, y: top[1].y / H },
+              br: { x: bottom[0].x / W, y: bottom[0].y / H },
+              bl: { x: bottom[1].x / W, y: bottom[1].y / H }
+            };
+            nowDetected = true;
+          }
+          approx.delete();
+        }
+      }
+
+      src.delete(); gray.delete(); blurred.delete(); edges.delete();
+      contours.delete(); hierarchy.delete();
+    } catch (e) {
+      console.warn('OpenCV Detect Error:', e);
+    }
   }
-  const avgBrightness = bright / total;
-  const nowDetected = avgBrightness > 140; // bright center → likely paper
+
+  // Fallback if not detected or CV not ready
+  if (!nowDetected) {
+    const centerData = ctx.getImageData(W*0.2, H*0.15, W*0.6, H*0.7);
+    let bright = 0, total = centerData.data.length / 4;
+    for (let i = 0; i < centerData.data.length; i += 4) {
+      bright += (centerData.data[i] + centerData.data[i+1] + centerData.data[i+2]) / 3;
+    }
+    const avgBrightness = bright / total;
+    nowDetected = avgBrightness > 150;
+    if (nowDetected) {
+      // Use standard rect if no CV quad
+      detectedQuad = {
+        tl: { x: 0.1, y: 0.15 }, tr: { x: 0.9, y: 0.15 },
+        br: { x: 0.9, y: 0.85 }, bl: { x: 0.1, y: 0.85 }
+      };
+    } else {
+      detectedQuad = null;
+    }
+  }
 
   if (nowDetected !== isDocDetected) {
     isDocDetected = nowDetected;
@@ -95,8 +171,8 @@ function detectDocument(video) {
     cancelAutoCountdown();
   }
 
-  // Draw detected quad overlay on overlay-canvas
-  drawQuadOverlay(nowDetected);
+  // Draw detected quad overlay
+  drawQuadOverlay(isDocDetected);
 }
 
 // ─── Draw Document Quad Overlay ──────────────────────────────
@@ -110,52 +186,58 @@ function drawQuadOverlay(detected) {
   oc.width  = oc.offsetWidth  || video.clientWidth  || 375;
   oc.height = oc.offsetHeight || video.clientHeight || 600;
   ctx.clearRect(0, 0, oc.width, oc.height);
-  if (!detected) return;
+  if (!detected || !detectedQuad) return;
 
   const W = oc.width, H = oc.height;
-  const margin = { x: W * 0.06, y: H * 0.08 };
 
-  // Animated quad
-  const t = Date.now() / 600;
-  const pulse = Math.sin(t) * 3;
-
+  // Quad points
   const pts = [
-    { x: margin.x + pulse,     y: margin.y + pulse },
-    { x: W - margin.x - pulse, y: margin.y + pulse },
-    { x: W - margin.x - pulse, y: H - margin.y - pulse },
-    { x: margin.x + pulse,     y: H - margin.y - pulse },
+    { x: detectedQuad.tl.x * W, y: detectedQuad.tl.y * H },
+    { x: detectedQuad.tr.x * W, y: detectedQuad.tr.y * H },
+    { x: detectedQuad.br.x * W, y: detectedQuad.br.y * H },
+    { x: detectedQuad.bl.x * W, y: detectedQuad.bl.y * H },
   ];
 
-  // Filled dim overlay outside the document
-  ctx.fillStyle = 'rgba(0,0,0,0.35)';
-  ctx.fillRect(0, 0, W, H);
-  ctx.clearRect(pts[0].x, pts[0].y, pts[2].x - pts[0].x, pts[2].y - pts[0].y);
+  // Filled dim overlay outside the document (use clip to punch a hole)
+  ctx.fillStyle = 'rgba(0,0,0,0.4)';
+  ctx.beginPath();
+  ctx.moveTo(0,0); ctx.lineTo(W,0); ctx.lineTo(W,H); ctx.lineTo(0,H); ctx.closePath();
+  ctx.moveTo(pts[0].x, pts[0].y);
+  ctx.lineTo(pts[1].x, pts[1].y);
+  ctx.lineTo(pts[2].x, pts[2].y);
+  ctx.lineTo(pts[3].x, pts[3].y);
+  ctx.closePath();
+  ctx.fill('evenodd');
 
   // Teal border
   ctx.strokeStyle = '#2de0b8';
   ctx.lineWidth   = 3;
   ctx.lineJoin    = 'round';
-  ctx.shadowColor = '#2de0b8';
-  ctx.shadowBlur  = 10;
   ctx.beginPath();
   ctx.moveTo(pts[0].x, pts[0].y);
-  pts.forEach(p => ctx.lineTo(p.x, p.y));
+  ctx.lineTo(pts[1].x, pts[1].y);
+  ctx.lineTo(pts[2].x, pts[2].y);
+  ctx.lineTo(pts[3].x, pts[3].y);
   ctx.closePath();
   ctx.stroke();
-  ctx.shadowBlur = 0;
 
   // Corner handles
-  const corner = 28;
+  const corner = 22;
   ctx.strokeStyle = '#2de0b8';
-  ctx.lineWidth   = 4;
+  ctx.lineWidth   = 5;
   ctx.lineCap     = 'round';
-  [pts[0], pts[1], pts[2], pts[3]].forEach((p, i) => {
+  pts.forEach((p, i) => {
     ctx.beginPath();
-    const dx = i === 1 || i === 2 ? -1 :  1;
-    const dy = i === 2 || i === 3 ? -1 :  1;
-    ctx.moveTo(p.x + dx * corner, p.y);
-    ctx.lineTo(p.x, p.y);
-    ctx.lineTo(p.x, p.y + dy * corner);
+    // Simple bracket style
+    if (i === 0) { // tl
+      ctx.moveTo(p.x + corner, p.y); ctx.lineTo(p.x, p.y); ctx.lineTo(p.x, p.y + corner);
+    } else if (i === 1) { // tr
+      ctx.moveTo(p.x - corner, p.y); ctx.lineTo(p.x, p.y); ctx.lineTo(p.x, p.y + corner);
+    } else if (i === 2) { // br
+      ctx.moveTo(p.x - corner, p.y); ctx.lineTo(p.x, p.y); ctx.lineTo(p.x, p.y - corner);
+    } else if (i === 3) { // bl
+      ctx.moveTo(p.x + corner, p.y); ctx.lineTo(p.x, p.y); ctx.lineTo(p.x, p.y - corner);
+    }
     ctx.stroke();
   });
 }
