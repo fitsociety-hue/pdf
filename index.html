@@ -42,25 +42,87 @@
   </div>
 </div>
 
-<!-- ── Camera Overlay ─────────────────────────────────── -->
+<!-- ── Camera Overlay (Samsung Scanner Style) ──────────── -->
 <div class="camera-overlay" id="camera-overlay">
-  <div style="position:absolute;inset:0;background:rgba(255,255,255,0);pointer-events:none;transition:opacity 0.15s;z-index:10" id="camera-flash"></div>
-  <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;background:rgba(0,0,0,0.6)">
-    <button class="btn-icon" onclick="closeCamera()" style="color:#fff">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m18 6-12 12M6 6l12 12"/></svg>
+  <!-- Flash effect -->
+  <div id="camera-flash" style="position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;transition:opacity 0.12s;z-index:20"></div>
+
+  <!-- Document edge detection canvas overlay -->
+  <canvas id="cam-overlay-canvas" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:5"></canvas>
+
+  <!-- Auto-capture countdown (center) -->
+  <div id="cam-auto-countdown" style="display:none;position:absolute;inset:0;z-index:15;align-items:center;justify-content:center;pointer-events:none">
+    <div style="width:90px;height:90px;border-radius:50%;background:rgba(0,0,0,0.75);border:3px solid #2de0b8;display:flex;align-items:center;justify-content:center;font-size:2.8rem;font-weight:800;color:#2de0b8;font-family:var(--font-main)">2</div>
+  </div>
+
+  <!-- Timer countdown (center top) -->
+  <div id="cam-timer-countdown" style="display:none;position:absolute;top:30%;left:50%;transform:translateX(-50%);z-index:15;font-size:4rem;font-weight:800;color:#fff;text-shadow:0 0 20px rgba(0,0,0,0.8)">3</div>
+
+  <!-- ── TOP BAR ───────────────────────────────────────── -->
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:calc(env(safe-area-inset-top) + 10px) 16px 12px;background:rgba(0,0,0,0.55);backdrop-filter:blur(6px);z-index:10;position:relative">
+    <!-- Close + page count -->
+    <button class="cam-ctrl-btn" onclick="closeCamera()" title="닫기">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m18 6-12 12M6 6l12 12"/></svg>
     </button>
-    <span style="color:#fff;font-size:0.9rem;font-weight:600" id="cam-count">0장 촬영</span>
-    <button class="btn-icon" onclick="switchCamera()" style="color:#fff">
+
+    <!-- Controls row -->
+    <div style="display:flex;align-items:center;gap:6px">
+      <!-- Page count icon -->
+      <div style="position:relative;display:flex;align-items:center;justify-content:center;width:42px;height:42px">
+        <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="1.8" style="width:26px;height:26px"><rect x="4" y="4" width="13" height="17" rx="2"/><rect x="7" y="7" width="13" height="17" rx="2" fill="rgba(255,255,255,0.15)" stroke="rgba(255,255,255,0.9)"/></svg>
+        <span id="cam-badge" style="display:none;position:absolute;top:-3px;right:-3px;background:#2de0b8;color:#000;font-size:0.65rem;font-weight:800;min-width:18px;height:18px;border-radius:9px;display:none;align-items:center;justify-content:center;padding:0 4px;line-height:1">0</span>
+      </div>
+      <!-- Flash -->
+      <button class="cam-ctrl-btn" id="cam-flash-btn" onclick="toggleFlash()" title="플래시">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        <span style="font-size:0.6rem;margin-top:2px;opacity:0.7">플래시</span>
+      </button>
+      <!-- Timer -->
+      <button class="cam-ctrl-btn" id="cam-timer-btn" onclick="cycleTimer()" title="타이머">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="13" r="8"/><polyline points="12 9 12 13 14 15"/><path d="m9 2 6 0M12 2v3"/></svg>
+        <span style="font-size:0.6rem;margin-top:2px;opacity:0.7">OFF</span>
+      </button>
+      <!-- Auto capture -->
+      <button class="cam-ctrl-btn" id="cam-auto-btn" onclick="toggleAutoCapture()" title="자동 촬영">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg>
+        <span style="font-size:0.6rem;margin-top:2px;opacity:0.7">AUTO</span>
+      </button>
+    </div>
+
+    <!-- Switch camera -->
+    <button class="cam-ctrl-btn" onclick="switchCamera()" title="카메라 전환">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 4v6h6M23 20v-6h-6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10M23 14l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>
     </button>
   </div>
-  <video id="camera-video" autoplay playsinline style="flex:1;width:100%;object-fit:cover"></video>
-  <div class="camera-controls">
-    <button class="btn-icon" style="color:#fff;opacity:0.7" onclick="closeCamera()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
-    </button>
-    <button class="shutter-btn" onclick="capturePhotoCam()"></button>
-    <button class="btn-icon" onclick="doneCameraCapture()" style="color:#7b8cff;font-size:0.8rem;font-weight:700;width:auto;padding:10px 14px">완료</button>
+
+  <!-- ── VIDEO FEED ─────────────────────────────────────── -->
+  <video id="camera-video" autoplay playsinline style="flex:1;width:100%;object-fit:cover;display:block"></video>
+
+  <!-- ── GUIDE TEXT ─────────────────────────────────────── -->
+  <div style="position:relative;z-index:10;display:flex;justify-content:center;padding:10px 20px;background:transparent;pointer-events:none">
+    <div id="cam-guide-text" style="background:rgba(0,0,0,0.75);color:#fff;font-size:0.82rem;font-weight:600;padding:8px 18px;border-radius:100px;text-align:center;transition:all 0.3s;letter-spacing:0.01em">
+      네 모서리가 모두 보이도록 스캔해주세요
+    </div>
+  </div>
+
+  <!-- ── BOTTOM BAR ─────────────────────────────────────── -->
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 28px calc(16px + env(safe-area-inset-bottom));background:rgba(0,0,0,0.75);backdrop-filter:blur(10px);z-index:10">
+    <!-- Last captured thumbnail -->
+    <div id="cam-thumbnail" onclick="closeCamera();showPage('editor')"
+      style="width:54px;height:68px;border-radius:10px;background:rgba(255,255,255,0.1);border:2px solid rgba(255,255,255,0.3);cursor:pointer;display:flex;align-items:center;justify-content:center;overflow:hidden;transition:transform 0.2s;font-size:1.4rem;background-size:cover;background-position:center">
+      📂
+    </div>
+
+    <!-- Shutter button -->
+    <button class="shutter-btn-new" onclick="capturePhoto()" id="cam-shutter" aria-label="촬영"></button>
+
+    <!-- Library / Done -->
+    <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+      <button class="cam-ctrl-btn" onclick="openLibrary()" title="라이브러리" style="width:54px;height:54px;background:rgba(255,255,255,0.12);border:2px solid rgba(255,255,255,0.25)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      </button>
+      <span style="color:rgba(255,255,255,0.7);font-size:0.65rem;font-weight:500">라이브러리</span>
+    </div>
   </div>
 </div>
 
