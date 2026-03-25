@@ -24,6 +24,25 @@
   <script src="https://docs.opencv.org/4.7.0/opencv.js" async onload="onOpenCvReady()"></script>
 
   <link rel="stylesheet" href="css/style.css">
+  <script>
+    // Global Error Handler for Diagnostics
+    window.onerror = function(msg, url, line, col, error) {
+      const errorMsg = `[Error] ${msg}\nLine: ${line}, Col: ${col}\nURL: ${url}`;
+      console.error(errorMsg);
+      if (window.toast) {
+        window.toast('런타임 오류: ' + msg, 'error', 5000);
+      } else {
+        alert(errorMsg);
+      }
+      return false;
+    };
+    window.onunhandledrejection = function(event) {
+      console.error('[Promise Error]', event.reason);
+      if (window.toast) {
+        window.toast('네트워크/비동기 오류: ' + event.reason, 'error', 5000);
+      }
+    };
+  </script>
 </head>
 <body>
 
@@ -113,7 +132,7 @@
       <div id="cam-thumbnail" onclick="closeCamera();showPage('editor')"
         style="width:50px;height:64px;border-radius:10px;background:rgba(255,255,255,0.1);border:1.5px solid rgba(255,255,255,0.3);cursor:pointer;display:flex;align-items:center;justify-content:center;overflow:hidden;transition:transform 0.2s;font-size:1.2rem;background-size:cover;background-position:center;box-shadow:0 4px 12px rgba(0,0,0,0.4);position:relative">
         📂
-        <div id="cam-badge" style="position:absolute;top:-6px;right:-6px;background:#ff4b4b;color:#fff;font-size:0.65rem;min-width:18px;height:18px;border-radius:10px;display:none;align-items:center;justify-content:center;font-weight:700;box-shadow:0 2px 6px rgba(0,0,0,0.3);z-index:5">0</div>
+        <div id="cam-badge-thumbnail" style="position:absolute;top:-6px;right:-6px;background:#ff4b4b;color:#fff;font-size:0.65rem;min-width:18px;height:18px;border-radius:10px;display:none;align-items:center;justify-content:center;font-weight:700;box-shadow:0 2px 6px rgba(0,0,0,0.3);z-index:5">0</div>
       </div>
     </div>
 
@@ -127,6 +146,8 @@
         완료
       </button>
     </div>
+  </div>
+</div>
 
 <!-- ── Hidden File Input ───────────────────────────────── --><input type="file" id="file-input" accept="image/*" multiple style="display:none">
 
