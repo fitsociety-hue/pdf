@@ -649,25 +649,26 @@ body {
 }
 .cam-ctrl-btn svg { width: 20px; height: 20px; }
 
-/* Samsung-style shutter button - Enhanced Visibility */
+/* Samsung-style shutter button - Clean White & Premium */
 .shutter-btn-new {
   width: 78px; height: 78px; border-radius: 50%;
-  background: white;
-  border: 5px solid rgba(255,255,255,0.3);
-  cursor: pointer; transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  background: rgba(255, 255, 255, 0.25); /* Translucent outer ring */
+  border: 4px solid rgba(255, 255, 255, 0.82);
+  cursor: pointer; transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative; flex-shrink: 0;
-  box-shadow: 0 0 25px rgba(0,0,0,0.5);
+  box-shadow: 0 0 20px rgba(0,0,0,0.4);
   display: flex; align-items: center; justify-content: center;
+  padding: 0; outline: none; appearance: none; -webkit-appearance: none;
 }
 .shutter-btn-new::after {
   content: '';
-  width: 62px; height: 62px;
+  width: 58px; height: 58px;
   background: #fff; border-radius: 50%;
-  border: 2px solid #000;
-  transition: transform 0.15s;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+  transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275), background 0.2s;
 }
-.shutter-btn-new:active { transform: scale(0.92); }
-.shutter-btn-new:active::after { transform: scale(0.9); }
+.shutter-btn-new:active { transform: scale(0.95); background: rgba(255, 255, 255, 0.35); }
+.shutter-btn-new:active::after { transform: scale(0.88); background: #f0f0f0; }
 
 /* PDF Preview Wrap */
 .pdf-preview-wrap {
