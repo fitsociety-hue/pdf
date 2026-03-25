@@ -670,6 +670,21 @@ body {
 .shutter-btn-new:active { transform: scale(0.95); background: rgba(255, 255, 255, 0.35); }
 .shutter-btn-new:active::after { transform: scale(0.88); background: #f0f0f0; }
 
+/* Pulse animation for document detection */
+@keyframes shutterPulse {
+  0% { box-shadow: 0 0 0 0 rgba(45, 224, 184, 0.7); }
+  70% { box-shadow: 0 0 0 15px rgba(45, 224, 184, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(45, 224, 184, 0); }
+}
+
+.shutter-btn-new.detected {
+  border-color: #2de0b8;
+  animation: shutterPulse 1.5s infinite;
+}
+.shutter-btn-new.detected::after {
+  background: #fff;
+}
+
 /* PDF Preview Wrap */
 .pdf-preview-wrap {
   background: #f8fafc;

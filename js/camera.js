@@ -292,15 +292,18 @@ function drawQuadOverlay(detected) {
 // ─── Overlay Feedback Text ───────────────────────────────────
 function updateOverlayFeedback(detected) {
   const el = document.getElementById('cam-guide-text');
+  const shutter = document.getElementById('cam-shutter');
   if (!el) return;
   if (detected) {
     el.textContent = '문서가 감지되었습니다 ✓';
     el.style.background = 'rgba(45,224,184,0.85)';
     el.style.color = '#000';
+    if (shutter) shutter.classList.add('detected');
   } else {
     el.textContent = '네 모서리가 모두 보이도록 스캔해주세요';
     el.style.background = 'rgba(0,0,0,0.75)';
     el.style.color = '#fff';
+    if (shutter) shutter.classList.remove('detected');
   }
 }
 
@@ -353,23 +356,15 @@ function doCapture(video) {
   canvas.getContext('2d').drawImage(video, 0, 0);
   const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
   const name = `스캔_${new Date().toLocaleString('ko-KR').replace(/[\s:.]/g,'')}.jpg`;
-  addImage(dataUrl, name);
   capturedCount = window.ScanApp.images.length;
   updateCamBadge();
   updateCamThumbnail(dataUrl);
   if (navigator.vibrate) navigator.vibrate(50);
-  toast(`${capturedCount}장 촬영됨 — 플랫 보정 준비 중...`, 'success');
+  toast(`${capturedCount}장 촬영됨`, 'success');
 
-  // ✨ Auto-flatten: close camera and enter flatten mode on editor
-  setTimeout(() => {
-    closeCamera();
-    // After editor loads, auto-enter flatten mode
-    setTimeout(() => {
-      if (typeof enterFlattenMode === 'function') enterFlattenMode();
-    }, 350);
-  }, 600);
+  // ✨ Multi-shot mode: Camera stays open. 
+  // User can take more photos or click "Done" to finish.
 }
-
 // ─── Timer Capture ────────────────────────────────────────────
 function startTimerCapture(seconds, callback) {
   const el = document.getElementById('cam-timer-countdown');
@@ -476,9 +471,14 @@ function openLibrary() {
   document.getElementById('file-input')?.click();
 }
 
+function doneCameraCapture() {
+  closeCamera();
+}
+
 window.initCamera        = initCamera;
 window.capturePhoto      = capturePhoto;
 window.closeCamera       = closeCamera;
+window.doneCameraCapture = doneCameraCapture;
 window.switchCamera      = switchCamera;
 window.toggleFlash       = toggleFlash;
 window.cycleTimer        = cycleTimer;

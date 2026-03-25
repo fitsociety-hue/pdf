@@ -111,28 +111,24 @@
     <!-- Last captured thumbnail -->
     <div style="display:flex;justify-content:flex-start">
       <div id="cam-thumbnail" onclick="closeCamera();showPage('editor')"
-        style="width:50px;height:64px;border-radius:10px;background:rgba(255,255,255,0.1);border:1.5px solid rgba(255,255,255,0.3);cursor:pointer;display:flex;align-items:center;justify-content:center;overflow:hidden;transition:transform 0.2s;font-size:1.2rem;background-size:cover;background-position:center;box-shadow:0 4px 12px rgba(0,0,0,0.4)">
+        style="width:50px;height:64px;border-radius:10px;background:rgba(255,255,255,0.1);border:1.5px solid rgba(255,255,255,0.3);cursor:pointer;display:flex;align-items:center;justify-content:center;overflow:hidden;transition:transform 0.2s;font-size:1.2rem;background-size:cover;background-position:center;box-shadow:0 4px 12px rgba(0,0,0,0.4);position:relative">
         📂
+        <div id="cam-badge" style="position:absolute;top:-6px;right:-6px;background:#ff4b4b;color:#fff;font-size:0.65rem;min-width:18px;height:18px;border-radius:10px;display:none;align-items:center;justify-content:center;font-weight:700;box-shadow:0 2px 6px rgba(0,0,0,0.3);z-index:5">0</div>
       </div>
     </div>
 
     <!-- Shutter button -->
     <button class="shutter-btn-new" onclick="capturePhoto()" id="cam-shutter" aria-label="촬영"></button>
 
-    <!-- Library / Done -->
+    <!-- Finish button -->
     <div style="display:flex;justify-content:flex-end">
-      <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
-        <button class="cam-ctrl-btn" onclick="openLibrary()" title="라이브러리" style="width:50px;height:50px;background:rgba(255,255,255,0.12);border:1.5px solid rgba(255,255,255,0.25)">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-        </button>
-        <span style="color:rgba(255,255,255,0.7);font-size:0.62rem;font-weight:600">라이브러리</span>
-      </div>
+      <button onclick="doneCameraCapture()" 
+        style="padding:10px 20px;border-radius:100px;background:#2de0b8;color:#000;font-weight:700;border:none;cursor:pointer;box-shadow:0 4px 15px rgba(45,224,184,0.4);transition:transform 0.2s;font-size:0.9rem;-webkit-tap-highlight-color:transparent">
+        완료
+      </button>
     </div>
-  </div>
-</div>
 
-<!-- ── Hidden File Input ───────────────────────────────── -->
-<input type="file" id="file-input" accept="image/*" multiple style="display:none">
+<!-- ── Hidden File Input ───────────────────────────────── --><input type="file" id="file-input" accept="image/*" multiple style="display:none">
 
 <!-- ════════════════════════════════════════════════════════
      PAGE: HOME
