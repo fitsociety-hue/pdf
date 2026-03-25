@@ -6,7 +6,7 @@
 
 // ─── State ──────────────────────────────────────────────────
 let cameraStream = null;
-let camSettings  = { flash: false, timer: 0, autoCapture: false };
+let camSettings  = { flash: false, timer: 0, autoCapture: false, facingMode: 'environment' };
 let docDetectInterval = null;
 let autoCountdown     = null;
 let autoCountdownSec  = 0;
@@ -24,8 +24,9 @@ function onOpenCvReady() {
 }
 
 // ─── Init Camera ─────────────────────────────────────────────
-function initCamera() {
-  // Fallback for browsers without getUserMedia
+// ─── Init Camera ─────────────────────────────────────────────
+async function initCamera() {
+  // 1. Fallback for browsers without getUserMedia
   if (!navigator.mediaDevices?.getUserMedia) {
     const inp = document.createElement('input');
     inp.type = 'file'; inp.accept = 'image/*'; inp.capture = 'camera';
@@ -44,27 +45,73 @@ function initCamera() {
   capturedCount = window.ScanApp.images.length;
   updateCamBadge();
 
-  navigator.mediaDevices.getUserMedia({
-    video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } },
-    audio: false
-  }).then(stream => {
-    cameraStream = stream;
-    video.srcObject = stream;
-    video.play();
+  // Clear existing stream
+  if (cameraStream) {
+    cameraStream.getTracks().forEach(t => t.stop());
+    cameraStream = null;
+  }
+
+  // 2. Iterative Constraints
+  const constraintSets = [
+    { video: { facingMode: { ideal: camSettings.facingMode }, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false },
+    { video: { facingMode: { ideal: camSettings.facingMode }, width: { ideal: 1280 }, height: { ideal: 720 } },  audio: false },
+    { video: { facingMode: camSettings.facingMode }, audio: false },
+    { video: true, audio: false }
+  ];
+
+  let lastError = null;
+  let successfulStream = null;
+
+  for (const constraints of constraintSets) {
+    try {
+      console.log('Trying constraints:', constraints);
+      successfulStream = await navigator.mediaDevices.getUserMedia(constraints);
+      if (successfulStream) break; 
+    } catch (err) {
+      console.warn('Constraint set failed:', err.name, err.message);
+      lastError = err;
+    }
+  }
+
+  // 3. Handle Result
+  if (successfulStream) {
+    cameraStream = successfulStream;
+    video.srcObject = successfulStream;
+    
+    // Some browsers need a short delay or explicit play()
+    try {
+      await video.play();
+    } catch (e) {
+      console.error('Video play error:', e);
+    }
+
     overlay.classList.add('active');
     updateFlashBtn();
+
     // Offscreen detection canvas
     detectionCanvas = document.createElement('canvas');
-    // Start document edge detection loop
-    video.addEventListener('loadedmetadata', () => {
+    const setupDetection = () => {
       detectionCanvas.width  = video.videoWidth  || 640;
       detectionCanvas.height = video.videoHeight || 480;
       startDocDetection(video);
-    });
-  }).catch(err => {
-    console.error(err);
-    toast('카메라 접근 실패: ' + err.message, 'error');
-  });
+      video.removeEventListener('loadedmetadata', setupDetection);
+    };
+    
+    if (video.readyState >= 2) {
+      setupDetection();
+    } else {
+      video.addEventListener('loadedmetadata', setupDetection);
+    }
+  } else {
+    const errMsg = lastError ? `${lastError.name}: ${lastError.message}` : 'Unknown error';
+    console.error('All camera constraint sets failed:', lastError);
+    toast('카메라 연결 실패: ' + errMsg, 'error');
+    
+    // Final fallback: show file picker if it's a permission or hardware issue
+    if (lastError && (lastError.name === 'NotAllowedError' || lastError.name === 'NotFoundError')) {
+      toast('카메라 권한을 허용하거나 장치를 확인해주세요.', 'info');
+    }
+  }
 }
 
 // ─── Document Edge Detection Loop ───────────────────────────
@@ -383,21 +430,9 @@ function toggleAutoCapture() {
 
 // ─── Switch Camera ────────────────────────────────────────────
 function switchCamera() {
-  if (!cameraStream) return;
-  const track = cameraStream.getVideoTracks()[0];
-  const cur = track?.getConstraints?.()?.facingMode?.ideal || 'environment';
-  const next = cur === 'environment' ? 'user' : 'environment';
-  stopDocDetection();
-  cameraStream.getTracks().forEach(t => t.stop());
-  cameraStream = null;
-  navigator.mediaDevices.getUserMedia({
-    video: { facingMode: { ideal: next }, width: { ideal: 1920 }, height: { ideal: 1080 } },
-    audio: false
-  }).then(stream => {
-    cameraStream = stream;
-    const video = document.getElementById('camera-video');
-    if (video) { video.srcObject = stream; video.play(); startDocDetection(video); }
-  }).catch(e => toast('카메라 전환 실패: ' + e.message, 'error'));
+  camSettings.facingMode = (camSettings.facingMode === 'environment') ? 'user' : 'environment';
+  toast(camSettings.facingMode === 'environment' ? '후면 카메라로 전환' : '전면 카메라로 전환', 'info');
+  initCamera();
 }
 
 // ─── Close Camera ─────────────────────────────────────────────
