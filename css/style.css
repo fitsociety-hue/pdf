@@ -651,11 +651,12 @@ body {
 
 /* Samsung-style shutter button */
 .shutter-btn-new {
-  width: 76px; height: 76px; border-radius: 50%;
-  background: rgba(255,255,255,0.15);
-  border: 3px solid rgba(255,255,255,0.7);
-  cursor: pointer; transition: all 0.15s;
+  width: 84px; height: 84px; border-radius: 50%;
+  background: rgba(255,255,255,0.18);
+  border: 4px solid rgba(255,255,255,1);
+  cursor: pointer; transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   position: relative; flex-shrink: 0;
+  box-shadow: 0 0 20px rgba(0,0,0,0.3);
 }
 .shutter-btn-new::after {
   content: '';
@@ -665,6 +666,28 @@ body {
 }
 .shutter-btn-new:active { transform: scale(0.9); }
 .shutter-btn-new:active::after { transform: scale(0.85); }
+
+/* PDF Preview Wrap */
+.pdf-preview-wrap {
+  background: #f8fafc;
+  min-height: 480px;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+  border: 1px solid var(--border);
+  margin: 0 auto;
+  width: 100%;
+}
+#pdf-prev-canvas {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  display: block;
+}
 
 /* ─── Utilities ──────────────────────────────────────────────── */
 .hidden { display: none !important; }

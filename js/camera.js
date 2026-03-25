@@ -228,9 +228,17 @@ function doCapture(video) {
   capturedCount = window.ScanApp.images.length;
   updateCamBadge();
   updateCamThumbnail(dataUrl);
-  // Haptic feedback if available
   if (navigator.vibrate) navigator.vibrate(50);
-  toast(`${capturedCount}장 촬영됨`, 'success');
+  toast(`${capturedCount}장 촬영됨 — 플랫 보정 준비 중...`, 'success');
+
+  // ✨ Auto-flatten: close camera and enter flatten mode on editor
+  setTimeout(() => {
+    closeCamera();
+    // After editor loads, auto-enter flatten mode
+    setTimeout(() => {
+      if (typeof enterFlattenMode === 'function') enterFlattenMode();
+    }, 350);
+  }, 600);
 }
 
 // ─── Timer Capture ────────────────────────────────────────────
@@ -325,7 +333,8 @@ function closeCamera() {
 
   if (window.ScanApp.images.length > 0) {
     showPage('editor');
-    loadImageToEditor(0);
+    // Load the most recently added image
+    loadImageToEditor(window.ScanApp.images.length - 1);
     refreshImageStrip();
   }
 }

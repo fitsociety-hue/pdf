@@ -105,22 +105,26 @@
   </div>
 
   <!-- ── BOTTOM BAR ─────────────────────────────────────── -->
-  <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 28px calc(16px + env(safe-area-inset-bottom));background:rgba(0,0,0,0.75);backdrop-filter:blur(10px);z-index:10">
+  <div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:16px 20px calc(16px + env(safe-area-inset-bottom));background:rgba(0,0,0,0.8);backdrop-filter:blur(12px);z-index:10;gap:10px">
     <!-- Last captured thumbnail -->
-    <div id="cam-thumbnail" onclick="closeCamera();showPage('editor')"
-      style="width:54px;height:68px;border-radius:10px;background:rgba(255,255,255,0.1);border:2px solid rgba(255,255,255,0.3);cursor:pointer;display:flex;align-items:center;justify-content:center;overflow:hidden;transition:transform 0.2s;font-size:1.4rem;background-size:cover;background-position:center">
-      📂
+    <div style="display:flex;justify-content:flex-start">
+      <div id="cam-thumbnail" onclick="closeCamera();showPage('editor')"
+        style="width:50px;height:64px;border-radius:10px;background:rgba(255,255,255,0.1);border:1.5px solid rgba(255,255,255,0.3);cursor:pointer;display:flex;align-items:center;justify-content:center;overflow:hidden;transition:transform 0.2s;font-size:1.2rem;background-size:cover;background-position:center;box-shadow:0 4px 12px rgba(0,0,0,0.4)">
+        📂
+      </div>
     </div>
 
     <!-- Shutter button -->
     <button class="shutter-btn-new" onclick="capturePhoto()" id="cam-shutter" aria-label="촬영"></button>
 
     <!-- Library / Done -->
-    <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
-      <button class="cam-ctrl-btn" onclick="openLibrary()" title="라이브러리" style="width:54px;height:54px;background:rgba(255,255,255,0.12);border:2px solid rgba(255,255,255,0.25)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-      </button>
-      <span style="color:rgba(255,255,255,0.7);font-size:0.65rem;font-weight:500">라이브러리</span>
+    <div style="display:flex;justify-content:flex-end">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+        <button class="cam-ctrl-btn" onclick="openLibrary()" title="라이브러리" style="width:50px;height:50px;background:rgba(255,255,255,0.12);border:1.5px solid rgba(255,255,255,0.25)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        </button>
+        <span style="color:rgba(255,255,255,0.7);font-size:0.62rem;font-weight:600">라이브러리</span>
+      </div>
     </div>
   </div>
 </div>
@@ -319,19 +323,19 @@
 
   <!-- PDF Tab -->
   <div class="result-pane active" data-pane="pdf">
-    <div class="pdf-preview-wrap">
+    <div class="pdf-preview-wrap" style="height: 60vh; background: #f0f4f8;">
       <canvas id="pdf-prev-canvas"></canvas>
-      <div id="pdf-placeholder" style="text-align:center;color:var(--text-muted);padding:60px 20px">
-        <div style="font-size:3rem">📄</div>
-        <p style="margin-top:12px;font-size:0.9rem">PDF를 생성하면 여기에 미리보기가 표시됩니다</p>
+      <div id="pdf-placeholder" style="position: absolute; text-align:center; color:var(--text-muted); padding:20px; z-index: 5">
+        <div style="font-size:3rem; margin-bottom: 10px">📄</div>
+        <p style="font-size:0.9rem">PDF를 생성하면 여기에 미리보기가 표시됩니다</p>
         <button class="btn btn-primary mt-16" onclick="generatePDF()">📄 PDF 생성하기</button>
       </div>
     </div>
-    <div class="download-bar" style="margin-top:12px">
-      <button class="btn btn-primary flex-1" onclick="generatePDF()">⚙️ PDF 생성</button>
-      <button class="btn btn-ghost flex-1" onclick="downloadPDF()">⬇ 다운로드</button>
-      <button class="btn btn-ghost" onclick="sharePDF()" style="padding:14px">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+    <div class="download-bar" style="margin-top:20px">
+      <button class="btn btn-primary flex-1" onclick="generatePDF()" style="height: 52px; font-weight: 700">⚙️ PDF 생성</button>
+      <button class="btn btn-ghost flex-1" onclick="downloadPDF()" style="height: 52px; font-weight: 700">⬇ 다운로드</button>
+      <button class="btn btn-ghost" onclick="sharePDF()" style="padding:14px; height: 52px">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
       </button>
     </div>
   </div>
